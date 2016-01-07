@@ -7,7 +7,6 @@
     <style>
         .help-block {
             display: none;
-            color: red;
         }
     </style>
 </head>
@@ -17,7 +16,7 @@
 
             <legend>Converter</legend>
 
-            <div class="form-group">
+            <div class="form__have form-group">
                 <label class="col-md-4 control-label" for="have">Currency I have:</label>
                 <div class="col-md-4">
                     <select id="have" name="have" class="form-control"></select>
@@ -25,7 +24,7 @@
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form__want form-group">
                 <label class="col-md-4 control-label" for="want">Currency I want:</label>
                 <div class="col-md-4">
                     <select id="want" name="want" class="form-control"></select>
@@ -33,7 +32,7 @@
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form__amount form-group">
                 <label class="col-md-4 control-label" for="amount">Amount</label>
                 <div class="col-md-4">
                     <input id="amount" name="amount" type="number" min="0" placeholder="Enter amount" class="form-control input-md">
@@ -41,14 +40,14 @@
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form__result form-group">
                 <label class="col-md-4 control-label" for="result">Result</label>
                 <div class="col-md-4">
-                    <input id="result" name="result" type="text" class="form-control input-md" disabled readonly>
+                    <input id="result" name="result" type="text" class="form-control input-md" readonly>
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form__exchange form-group">
                 <label class="col-md-4 control-label" for="exchange">Single Button</label>
                 <div class="col-md-4">
                     <button id="exchange" type="button" name="exchange" class="btn btn-primary" disabled>Exchange</button>

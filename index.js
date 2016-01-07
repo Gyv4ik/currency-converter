@@ -2,12 +2,13 @@
 
 	var model = {
 		ccyData: null,
+		baseCcy: null,
 		state: {
 			have: {
-				selected: null
+				value: null
 			},
 			want: {
-				selected: null,
+				value: null,
 				hidden: null
 			},
 			amount: null,
@@ -17,22 +18,18 @@
 	var CCY_LEN = 3;
 	var have = $('#have');
 	var want = $('#want');
+	var amount = $('#amount');
+	var exchange = $("#exchange");
+	var result = $('#result');
 
 
 	initCurrencies();
 
 
-	$("#have").on('change', null, haveChangeHandler);
-	$("#want").on('change', null, wantChangeHandler);
-	$("#exchange").on('click', null, function(event) {
-
-		if (!validateForm()) return;
-		$('.help-block').hide();
-		$("#result").prop('disabled', false);
-		model.state.amount = +($('#amount').val());
-		$('#result').val(calcResult());
-		return false;
-	});
+	have.on('change', null, haveChangeHandler);
+	want.on('change', null, wantChangeHandler);
+	amount.on('change', null, amountChangeHandler);
+	exchange.on('click', null, exchangeHandler);
 
 	function initCurrencies() {
 		var xhr = $.ajax({
@@ -47,13 +44,14 @@
 
 	function handleInit(data) {
 		model.ccyData = data;
+		model.baseCcy = model.ccyData[0].base_ccy;
 		render();
-		$('#exchange').prop('disabled', false);
+		exchange.prop('disabled', false);
 	}
 
 	function render() {
 
-		var baseCcy = model.ccyData[0].base_ccy;
+		var baseCcy = model.baseCcy;
 		var fragment = $(document.createDocumentFragment());
 		var defaultOption = '<option>Select currency</option>';
 		var baseCcyOption = '<option value="' + baseCcy + '" >' + baseCcy + '</option>';
@@ -69,72 +67,131 @@
 	}
 
 	function haveChangeHandler() {
-		var haveVal = $(this).val();
-		var selectedCcy = $(have).find('option[value="' + haveVal + '"]');
-		var elToHide = $(want).find('option[value="' + haveVal + '"]');
-		var selectedItem = model.state.have.selected;
-		var hiddenEl = model.state.want.hidden;
+		var val = $(this).val();
+		var haveVal;
+		var elToHide;
+		var hiddenEl;
 
-		model.state.have.selected = selectedCcy;
-		if (haveVal == $(want).val()) {
-			$(want).val($(selectedItem).next().val() || $(selectedItem).prev().val());
+
+		if (val.length > CCY_LEN) {
+			model.state.have.value = null;
+			return;
+		}
+		model.state.have.value = val;
+		haveVal = model.state.have.value;
+		wantVal = model.state.want.value;
+		elToHide = $(want).find('option[value="' + haveVal + '"]');
+		hiddenEl = model.state.want.hidden;
+
+		if (haveVal == wantVal && elToHide.next().val()) {
+			$(want).val(elToHide.next().val());
+			model.state.want.value = $(want).val();
+		}
+		else if(haveVal == wantVal && elToHide.prev().val()) {
+			$(want).val(elToHide.prev().val());
+			model.state.want.value = $(want).val();
 		}
 		if (hiddenEl) hiddenEl.show();
 		model.state.want.hidden = elToHide;
-		model.state.want.hidden.css('display', 'none');
+		model.state.want.hidden.hide();
 	}
 
 	function wantChangeHandler() {
 		var val = $(this).val();
-		var selectedCcy = $(want).find('option[value="' + val + '"]');
+		if (val.length > CCY_LEN) {
+			model.state.want.value = null;
+			return;
+		}
+		console.log(val);
+		model.state.want.value = val;
+	}
 
-		model.state.want.selected = selectedCcy;
+	function amountChangeHandler() {
+		model.state.amount = parseFloat($(this).val());
+	}
+
+	function exchangeHandler() {
+		if (!validateForm()) return;
+		$(result).val(calcResult());
 	}
 
 	function calcResult() {
-		var have = model.state.have.selected;
-		var want = model.state.want.selected;
-		var baseCcy = model.ccyData[0].base_ccy;
+		var haveVal = model.state.have.value;
+		var wantVal = model.state.want.value;
+		var baseCcy = model.baseCcy;
 
-		if ($(have).val() == baseCcy) {
+		if (haveVal == baseCcy) {
 			return model.state.result = convertFromHryvna();
 		}
 
-		else if ($(want).val() == baseCcy) {
+		else if (wantVal == baseCcy) {
 			return model.state.result = convertToHryvna();
 		}
 
 		else {
-			return model.state.result = (convertToHryvna() / _.find(model.ccyData, {'ccy': $(want).val()}).sale).toFixed(2);
+			console.log(_.find(model.ccyData, {'ccy': wantVal}));
+			return model.state.result = (convertToHryvna() / _.find(model.ccyData, {'ccy': wantVal}).sale).toFixed(2);
 		}
 	}
 
 	function convertToHryvna() {
-		var have = model.state.have.selected;
-		var ccyInHave = _.find(model.ccyData, {'ccy': $(have).val()});
-		return result = (model.state.amount * parseFloat(ccyInHave.buy)).toFixed(2);
+		var haveVal = model.state.have.value;
+		var have = _.find(model.ccyData, {'ccy': haveVal});
+		return (model.state.amount * parseFloat(have.buy)).toFixed(2);
 	}
 
 	function convertFromHryvna() {
-		var want = model.state.want.selected;
-		var ccyInWant = _.find(model.ccyData, {'ccy': $(want).val()});
-		return result = (model.state.amount / parseFloat(ccyInWant.sale)).toFixed(2);
+		var wantVal = model.state.want.value;
+		var want = _.find(model.ccyData, {'ccy': wantVal});
+		return (model.state.amount / parseFloat(want.sale)).toFixed(2);
 	}
 
 	function validateForm() {
-		var amount = $('#amount');
-		if ($(have).val().length !== CCY_LEN) {
-			$(have).next().show();
+		var haveVal = model.state.have.value;
+		var wantVal = model.state.want.value;
+		var amount = model.state.amount;
+		var haveBlock = $('.form__have');
+		var wantBlock = $('.form__want');
+		var amountBlock = $('.form__amount');
+		var flag = false;
+
+		if (!haveVal) {
+			flag = true;
+			showError(haveBlock);
 		}
-		if ($(want).val().length !== CCY_LEN) {
-			$(want).next().show();
-			return;
+		else hideError(haveBlock);
+
+		if (!wantVal) {
+			flag = true;
+			showError(wantBlock);
 		}
-		if (+($(amount).val()) < 0) {
-			$(amount).next().show();
-			return;
+		else hideError(wantBlock);
+
+		if (amount < 1) {
+			flag = true;
+			showError(amountBlock);
 		}
-		return true;
+		else hideError(amountBlock);
+
+		if (!flag) {
+			flag = false;
+			return true;
+		}
+	}
+
+	function showError(block) {
+		var errorClass = 'has-error';
+
+		$(block).addClass(errorClass);
+		$(block).find('.help-block').show();
+		$(result).val('');
+	}
+
+	function hideError(block) {
+		var errorClass = 'has-error';
+
+		$(block).removeClass(errorClass);
+		$(block).find('.help-block').hide();
 	}
 
 })(jQuery);
