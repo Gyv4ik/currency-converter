@@ -68,6 +68,8 @@
 
 	function haveChangeHandler() {
 		var val = $(this).val();
+		var haveBlock = $('.form__have');
+		var wantVal = model.state.want.value;
 		var haveVal;
 		var elToHide;
 		var hiddenEl;
@@ -75,44 +77,71 @@
 
 		if (val.length > CCY_LEN) {
 			model.state.have.value = null;
+			showError(haveBlock);
 			return;
 		}
+		hideError(haveBlock);
 		model.state.have.value = val;
 		haveVal = model.state.have.value;
-		wantVal = model.state.want.value;
-		elToHide = $(want).find('option[value="' + haveVal + '"]');
-		hiddenEl = model.state.want.hidden;
 
-		if (haveVal == wantVal && elToHide.next().val()) {
-			$(want).val(elToHide.next().val());
-			model.state.want.value = $(want).val();
-		}
-		else if(haveVal == wantVal && elToHide.prev().val()) {
-			$(want).val(elToHide.prev().val());
-			model.state.want.value = $(want).val();
-		}
 		if (hiddenEl) hiddenEl.show();
+		elToHide = $(want).find('option[value="' + haveVal + '"]');
+		elToHide.show();
 		model.state.want.hidden = elToHide;
-		model.state.want.hidden.hide();
+
+		if (haveVal == wantVal) {
+			// console.log($(elToHide).next().val());
+			$(elToHide).next().val() ? $(want).val($(elToHide).next().val()) :$(want).val($(elToHide).prev().val());
+			model.state.want.value = $(want).val();
+		}
 	}
 
 	function wantChangeHandler() {
 		var val = $(this).val();
+		var wantBlock = $('.form__want');
 		if (val.length > CCY_LEN) {
 			model.state.want.value = null;
+			showError(wantBlock);
 			return;
 		}
-		console.log(val);
 		model.state.want.value = val;
+		hideError(wantBlock);
 	}
 
 	function amountChangeHandler() {
-		model.state.amount = parseFloat($(this).val());
+		var value = parseFloat($(this).val());
+		var amountBlock = $('.form__amount');
+
+		isNaN(value) ? model.state.amount = null : model.state.amount = value;
+		if (!model.state.amount || model.state.aomunt < 1) {
+			showError(amountBlock);
+			return;
+		}
+
+		hideError(amountBlock);
 	}
 
 	function exchangeHandler() {
-		if (!validateForm()) return;
-		$(result).val(calcResult());
+		var have = model.state.have.value;
+		var want = model.state.want.value;
+		var amount = model.state.amount;
+		var haveBlock = $('.form__have');
+		var wantBlock = $('.form__want');
+		var amountBlock = $('.form__amount');
+
+		if (!have) showError(haveBlock);
+		else hideError(haveBlock);
+
+		if (!want) showError(wantBlock);
+		else hideError(wantBlock);
+
+		if (!amount) showError(amountBlock);
+		else hideError(amountBlock);
+
+		if (have && want && amount)	model.state.result = calcResult();
+		else model.state.result = '';
+
+		showResult(model.state.result);
 	}
 
 	function calcResult() {
@@ -129,7 +158,6 @@
 		}
 
 		else {
-			console.log(_.find(model.ccyData, {'ccy': wantVal}));
 			return model.state.result = (convertToHryvna() / _.find(model.ccyData, {'ccy': wantVal}).sale).toFixed(2);
 		}
 	}
@@ -146,39 +174,6 @@
 		return (model.state.amount / parseFloat(want.sale)).toFixed(2);
 	}
 
-	function validateForm() {
-		var haveVal = model.state.have.value;
-		var wantVal = model.state.want.value;
-		var amount = model.state.amount;
-		var haveBlock = $('.form__have');
-		var wantBlock = $('.form__want');
-		var amountBlock = $('.form__amount');
-		var flag = false;
-
-		if (!haveVal) {
-			flag = true;
-			showError(haveBlock);
-		}
-		else hideError(haveBlock);
-
-		if (!wantVal) {
-			flag = true;
-			showError(wantBlock);
-		}
-		else hideError(wantBlock);
-
-		if (amount < 1) {
-			flag = true;
-			showError(amountBlock);
-		}
-		else hideError(amountBlock);
-
-		if (!flag) {
-			flag = false;
-			return true;
-		}
-	}
-
 	function showError(block) {
 		var errorClass = 'has-error';
 
@@ -192,6 +187,10 @@
 
 		$(block).removeClass(errorClass);
 		$(block).find('.help-block').hide();
+	}
+
+	function showResult(res) {
+		$(result).val(res);
 	}
 
 })(jQuery);
