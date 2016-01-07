@@ -28,7 +28,7 @@
 
 	have.on('change', null, haveChangeHandler);
 	want.on('change', null, wantChangeHandler);
-	amount.on('change', null, amountChangeHandler);
+	amount.on('keyup', null, amountChangeHandler);
 	exchange.on('click', null, exchangeHandler);
 
 	function initCurrencies() {
@@ -90,7 +90,6 @@
 		model.state.want.hidden = elToHide;
 
 		if (haveVal == wantVal) {
-			// console.log($(elToHide).next().val());
 			$(elToHide).next().val() ? $(want).val($(elToHide).next().val()) :$(want).val($(elToHide).prev().val());
 			model.state.want.value = $(want).val();
 		}
